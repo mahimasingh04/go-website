@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-  "os"
+    "os"
     "github.com/joho/godotenv"
 	"github.com/mahimasingh04/go-website/glow-backend/models"
 	"github.com/mahimasingh04/go-website/glow-backend/routes"
@@ -29,13 +29,16 @@ func main() {
 	}
 
 	// Auto-migrate User model
-	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.User{} , &models.Query{})
 
 	// Initialize Fiber
 	app := fiber.New()
+	chat := fiber.New()  
+	
 
 	// Setup routes
 	routes.AuthRoutes(app, db)
+	routes.ChatRoutes(chat, db)
 
 	// Start server
 	app.Listen(":3000")
