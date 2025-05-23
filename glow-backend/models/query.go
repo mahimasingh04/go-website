@@ -12,3 +12,4 @@ type Query struct {
 	QueryText   string    `gorm:"type:text" json:"query_text"` // User's query
 	IdealResponse string `gorm:"type:text" json:"ideal_response"`   // Expected/ideal AI response
 }
+

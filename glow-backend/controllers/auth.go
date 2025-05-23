@@ -7,6 +7,7 @@ import (
 	"time"
 	"github.com/mahimasingh04/go-website/glow-backend/models"
 	"gorm.io/gorm"
+	"os"
 	
 	
 )
@@ -92,15 +93,25 @@ func (ac *AuthController) SignInUser(c *fiber.Ctx) error {
 		})
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status": "fail",
+			"message": "JWT secret not configured",
+		})
+	}
+
 	//Generate JWT token 
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
-	claims["sub"] = user.ID
+	claims["user_id"] = user.ID
 	claims["iat"] = time.Now().Unix()
 	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 	claims["nbf"] = time.Now().Unix()
 
-	tokenString , err := token.SignedString([]byte("JWT_SECRET"))
+
+
+	tokenString , err := token.SignedString([]byte(jwtSecret))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status" : "fail",
@@ -114,7 +125,7 @@ func (ac *AuthController) SignInUser(c *fiber.Ctx) error {
 		Expires: time.Now().Add(time.Hour * 24),
 		HTTPOnly: true,
 		Secure: true,
-		SameSite: "None",
+		SameSite: "Lax",
 	}
 	c.Cookie(&cookie)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{

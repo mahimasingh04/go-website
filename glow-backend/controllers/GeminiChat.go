@@ -15,6 +15,13 @@ import ("github.com/joho/godotenv"
 
 )
 
+type ChatRequest struct {
+	
+	UserID  uint   `json:"user_id"`
+	Message string `json:"message"`
+	Budget  int    `json:"budget,omitempty"` // Optional budget for product suggestions
+}
+
 type GeminiChatController struct { // Create a struct to hold dependencies
 	DB *gorm.DB
 }
@@ -23,11 +30,7 @@ func NewGeminiChatController (db *gorm.DB) *GeminiChatController{ // Constructor
 	return &GeminiChatController{DB: db}
 }
 
-type ChatRequest struct {
-	UserID  uint   `json:"user_id"`
-	Message string `json:"message"`
-	Budget  int    `json:"budget,omitempty"` // Optional budget for product suggestions
-}
+
 
 func (ch *GeminiChatController) ChatWithAI(c *fiber.Ctx) error  {
 	req := new(ChatRequest)
@@ -68,6 +71,7 @@ func (ch *GeminiChatController) ChatWithAI(c *fiber.Ctx) error  {
 func (ch *GeminiChatController) generatePrompt(user models.User, userMessage string, budget int) (string, error) {
 	// Add more sophisticated logic here to categorize the query and generate the appropriate prompt
 	// Example (very basic):
+
 	if user.SkinType == "" {
 		return fmt.Sprintf("Identify the user's skin type (oily, dry, combination, sensitive, normal) based on the following symptoms: %s. Provide a concise skin type classification.", userMessage), nil
 	} else if budget > 0 {
@@ -99,12 +103,13 @@ func containsKeywords(message string, keywords []string) bool {
 func queryGemini(conversationHistory, prompt string) (string, error) {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Printf("Error loading .env file")
 		return "", fmt.Errorf("error loading .env file: %w", err)  // Return error, don't panic
 	}
 
 	ctx := context.Background()
 	apiKey := os.Getenv("GEMINI_API_KEY") 
+	 fmt.Println("Gemini API Key:", apiKey)
 
 	if apiKey == "" {
 		log.Println("GEMINI_API_KEY not set in .env")
@@ -126,12 +131,20 @@ func queryGemini(conversationHistory, prompt string) (string, error) {
 	resp, err := cs.SendMessage(ctx, genai.Text(fullPrompt))
 
 	if err != nil {
-		log.Println(err)
+		log.Println("Error sending message:", err)
 		return "", err
 	}
 responseString := ""
-for _, part := range resp.Candidates[0].Content.Parts {
-    responseString += fmt.Sprintf("%v", part)
-}
+	if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 { // Added safety check
+
+        for _, part := range resp.Candidates[0].Content.Parts {
+			responseString += fmt.Sprintf("%v", part)
+		}
+	} else {
+		log.Println("No candidates or parts in the response!") // Added Error logging
+		return "", fmt.Errorf("no content in Gemini response")
+	}
+
 return responseString,nil
+
 }

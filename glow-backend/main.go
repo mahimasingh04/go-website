@@ -33,12 +33,12 @@ func main() {
 
 	// Initialize Fiber
 	app := fiber.New()
-	chat := fiber.New()  
+	
 	
 
 	// Setup routes
 	routes.AuthRoutes(app, db)
-	routes.ChatRoutes(chat, db)
+	routes.ChatRoutes(app, db)
 
 	// Start server
 	app.Listen(":3000")

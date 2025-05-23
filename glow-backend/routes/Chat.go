@@ -10,12 +10,16 @@ import (
 	
 )
 
-func ChatRoutes(chat *fiber.App, db *gorm.DB)  {
+func ChatRoutes(app *fiber.App, db *gorm.DB)  {
 	GeminiChatController := controllers.NewGeminiChatController(db)
 
-	ai := chat.Group("/api/ai")
+	ai := app.Group("/api/ai")
 
 	ai.Use(middleware.AuthMiddleware(db))
 	ai.Post("/chat", GeminiChatController.ChatWithAI)
+	// Add inside ChatRoutes for debugging
+ ai.Get("/test", func(c *fiber.Ctx) error {
+    return c.SendString("AI route is working")
+})
 	
 }
